@@ -1,4 +1,6 @@
-﻿Imports Newtonsoft.Json.Linq
+﻿' версия 0.3
+
+Imports Newtonsoft.Json.Linq
 Imports System.Security.Cryptography
 Imports System.Text
 Imports System.IO
@@ -9,191 +11,165 @@ Public Class Form1
         ' получение полного имени файла из драгндропа.
         Dim raw_file() As String = CType(e.Data.GetData(DataFormats.FileDrop), String())
 
-        ' массив, получемый после отбасывания несоответствующих файлов(не json)
-        Dim file() As String
-        file = raw_file
-        ' обработка исключений: Если файл имеет расширение не json, то необходимо отборсить его
-        ' счетчик массива нужно будет пересчитать`
-        For I As Integer = 0 To file.Length - 1
-            Dim extension As String = FileIO.FileSystem.GetFileInfo(raw_file(I)).Extension
+        ' обработка исключений: Если файл имеет расширение не json, 
+        ' то необходимо отборсить его счетчик массива нужно будет пересчитать
+        Dim inc% = 0            ' инкремент валидных файлов
+        Dim file() As String    ' массив валидных файлов
+        For Each fl In raw_file
 
-            If extension <> ".json" Then
-                MsgBox("Файл " & FileIO.FileSystem.GetFileInfo(raw_file(I)).Name &
+            If FileIO.FileSystem.GetFileInfo(fl).Extension <> ".json" Then
+
+                MsgBox(FileIO.FileSystem.GetFileInfo(fl).Name &
                        " не может быть обработан, так как имеет неверный формат")
+                Continue For
             Else
-                ReDim Preserve file(I)
-                file(I) = raw_file(I)
 
+                ReDim Preserve file(inc)
+                inc += 1
+                file(inc - 1) = fl
             End If
-
         Next
-
 
         'если после первой обраотки массив пустой, то выйти из проедуры
         If IsNothing(file) Then
+
             Exit Sub
         End If
 
-
+        ' основной цикл обработки файлов
         For I As Integer = 0 To file.Length - 1
 
-            Dim shortname As String = IO.Path.GetFileNameWithoutExtension(file(I))          ' имя файла без расширения
-            Dim pathname As String = FileIO.FileSystem.GetFileInfo(file(I)).DirectoryName   ' путь
+            Dim ShortName$ = IO.Path.GetFileNameWithoutExtension(file(I))          ' имя файла без расширения
+            Dim PathName$ = FileIO.FileSystem.GetFileInfo(file(I)).DirectoryName   ' путь
+            Dim FullName$ = FileIO.FileSystem.GetFileInfo(file(I)).Name            ' имя с расширением
 
-            Dim raw_json As New StreamReader(file(I))       ' сырой файл
-            Dim contents As String = raw_json.ReadToEnd()   ' прочитанный файл
-            Dim total_q As Int64 = 0                        ' количество закупленных шт. в чеке
-            Dim json_obj                                    ' пропарсенный json
+            Dim raw_json As New StreamReader(file(I))   ' сырой файл
+            Dim contents$ = raw_json.ReadToEnd()        ' прочитанный файл
+            Dim total_q& = 0                            ' количество закупленных шт. в чеке
 
-            Dim quantity As Int16
-            Dim name As String
-            Dim price As Double
-            Dim sum_price As Double
-            Dim user As String
-            Dim bill_date
-            Dim total_sum As Double
-            Dim fOut As String = ""
-            Dim items
-            Dim dtime
+            Dim quantity&                         'long int
+            Dim name$, user$, prefix$, fOut$      'string
+            Dim price#, sum_price#, total_sum#    'double
+            Dim items, dtime, bill_date, json_obj 'variant
 
+
+            ' проверка, является ли файл json-файлом
             Try
                 json_obj = JObject.Parse(contents)
             Catch ex As Exception
-                MsgBox("Файл " & shortname & " не может быть обработан, так как не json-структурированным файлом")
+                MsgBox($"Файл {FullName} не может быть обработан, так как не является JSON-структурированным файлом")
                 Continue For
             End Try
 
 
+            ' переключение между схемами JSON для IOS и Android
             If Not IsNothing(json_obj.SelectToken("['ticket.document.receipt']")) Then
-
-
-                ' обработка исключений. Здесь проверяется корректность входящего json. Если присутствуют 
-                ' метки fiscalDocumentNumber и fiscalDriveNumber, то, это, скорее всего, правильный файл
-                Try
-
-                    Dim c_block0 As String = json_obj.SelectToken("['ticket.document.receipt'].operator")
-                    Dim c_block1 As String = json_obj.SelectToken("['ticket.document.receipt'].retailPlace")
-
-                    If IsNothing(c_block0) Or IsNothing(c_block0) Then
-                        Throw New Exception("JSONControlBlocksFail")
-                    End If
-                Catch ex As Exception
-                    MsgBox("Файл " & shortname & " не может быть обработан, так как не является кассовым чеком")
-                    Continue For
-                End Try
-
-                user = json_obj.SelectToken("['ticket.document.receipt'].retailPlace")               ' название магазина
-                bill_date = json_obj.SelectToken("['ticket.document.receipt'].dateTime")      ' дата создания чека d unixtime
-
-
-                total_sum = (json_obj.SelectToken("['ticket.document.receipt'].totalSum")) / 100 'итоговая сумма
-                fOut = ""     ' основная стока, которая собирает всю информацию
-
-                ' запись в основную строку
-                fOut = user & ";Дата:;" & bill_date & ";" & Chr(10) & ";" & Chr(10)
-                fOut = fOut & "Продукт;Количество;Цена за шт.;Цена;" & Chr(10)
-
-                items = json_obj.SelectToken("['ticket.document.receipt'].items")   ' массив позиций покупок в чеке
-
-                ' обработка всех позиций
-                For Each j In items
-
-                    quantity = j.SelectToken("quantity")           ' количество шт. позиции
-                    name = j.SelectToken("name")                  ' название позиции
-                    price = CDbl(j.SelectToken("price")) / 100    ' стоимость за штуку
-                    sum_price = CDbl(j.SelectToken("sum")) / 100  ' итоговая стоимость
-
-                    ' запись в основную строку
-                    fOut = fOut & name & ";"
-                    fOut = fOut & quantity.ToString & ";"
-                    fOut = fOut & price.ToString & ";"
-                    fOut = fOut & sum_price.ToString & ";" & Chr(10)
-
-                    ' инкремент штук(они нигде не указаны в json)
-                    total_q += quantity
-                Next
-
+                prefix = "['ticket.document.receipt']."
             Else
-
-
-                ' обработка исключений. Здесь проверяется корректность входящего json. Если присутствуют 
-                ' метки fiscalDocumentNumber и fiscalDriveNumber, то, это, скорее всего, правильный файл
-                Try
-
-                    Dim c_block0 As String = json_obj.SelectToken("operator")
-                    Dim c_block1 As String = json_obj.SelectToken("retailPlaceAddress")
-
-                    If IsNothing(c_block0) Or IsNothing(c_block0) Then
-                        Throw New Exception("JSONControlBlocksFail")
-                    End If
-                Catch ex As Exception
-                    MsgBox("Файл " & shortname & " не может быть обработан, так как не является кассовым чеком")
-                    Continue For
-                End Try
-
-                user = json_obj.SelectToken(".user")               ' название магазина
-                bill_date = json_obj.SelectToken("dateTime")      ' дата создания чека d unixtime
-
-                dtime = utime_to_date(bill_date) ' здесь конвертируется unixtime в datetime
-                total_sum = CDbl(json_obj.SelectToken("totalSum")) / 100 'итоговая сумма
-                fOut = ""     ' основная стока, которая собирает всю информацию
-
-                ' запись в основную строку
-                fOut = user & ";Дата:;" & dtime & ";" & Chr(10) & ";" & Chr(10)
-                fOut = fOut & "Продукт;Количество;Цена за шт.;Цена;" & Chr(10)
-
-                items = json_obj.SelectToken("items")   ' массив позиций покупок в чеке
-
-                ' обработка всех позиций
-                For Each j In items
-
-                    quantity = j.SelectToken("quantity")           ' количество шт. позиции
-                    name = j.SelectToken("name")                  ' название позиции
-                    price = CDbl(j.SelectToken("price")) / 100    ' стоимость за штуку
-                    sum_price = CDbl(j.SelectToken("sum")) / 100  ' итоговая стоимость
-
-                    ' запись в основную строку
-                    fOut = fOut & name & ";"
-                    fOut = fOut & quantity.ToString & ";"
-                    fOut = fOut & price.ToString & ";"
-                    fOut = fOut & sum_price.ToString & ";" & Chr(10)
-
-                    ' инкремент штук(они нигде не указаны в json)
-                    total_q += quantity
-                Next
+                prefix = ""
             End If
 
 
+            ' обработка исключений. Здесь проверяется корректность входящего json. Если присутствуют 
+            ' метки fiscalDocumentNumber и fiscalDriveNumber, то, это, скорее всего, правильный файл
+            Try
+                Dim c_block0 = json_obj.SelectToken($"{prefix}retailPlaceAddress")
+                Dim c_block1 = json_obj.SelectToken($"{prefix}fiscalDriveNumber")
 
+                If IsNothing(c_block0) Then c_block0 = ""
+                If IsNothing(c_block1) Then c_block1 = ""
+
+                If c_block0.ToString.Length = 0 Or c_block1.ToString.Length = 0 Then
+                    Throw New Exception("JSONControlBlocksFail")
+                End If
+            Catch ex As Exception
+                MsgBox($"Файл {FullName} не может быть обработан, так как не является кассовым чеком")
+                Continue For
+            End Try
+
+
+            ' название магазина
+            user = json_obj.SelectToken($"{prefix}user")
+
+            'дата создания чека в unixtime
+            bill_date = json_obj.SelectToken($"{prefix}dateTime")
+
+            ' здесь конвертируется unixtime в datetime. 
+            ' версия для android получает значение в unixtime, для IOS в datetime
+            ' поэтому необходимо отловить правильную версию
+            Try
+                dtime = CDate(utime_to_date(bill_date)).ToString("dd.MM.yyyy HH:mm:ss")
+            Catch
+                dtime = CDate(bill_date).ToString("dd.MM.yyyy HH:mm:ss")
+            End Try
+
+            'итоговая сумма
+            total_sum = CDbl(json_obj.SelectToken($"{prefix}totalSum")) / 100
+
+            ' основная стока, которая собирает всю информацию
+            fOut = ""
 
             ' запись в основную строку
-            fOut = fOut & Chr(10) & "ИТОГО:;" & total_q & ";;" & total_sum
+            fOut = $"{user};Дата:;{dtime};{Chr(10)};{Chr(10)}"
+            fOut = $"{fOut}Продукт;Количество;Цена за шт.;Цена;{Chr(10)}"
+
+            ' массив позиций покупок в чеке
+            items = json_obj.SelectToken($"{prefix}items")
+
+            ' обработка всех позиций
+            For Each j In items
+
+                quantity = j.SelectToken("quantity")          ' количество шт. позиции
+                name = j.SelectToken("name")                  ' название позиции
+                price = CDbl(j.SelectToken("price")) / 100    ' стоимость за штуку
+                sum_price = CDbl(j.SelectToken("sum")) / 100  ' итоговая стоимость
+
+                ' запись в основную строку
+                fOut = $"{fOut}{name};{quantity};{price};{sum_price};{Chr(10)}"
+
+                ' ирекурсивная запись всех строк
+                total_q += quantity
+            Next
+
+            ' запись в основную строку
+            fOut = $"{fOut}{Chr(10)}ИТОГО:;{total_q};;{total_sum}"
+            'fOut = fOut & Chr(10) & "ИТОГО:;" & total_q & ";;" & total_sum
 
             ' обработка исключений. Если csv файл существует и открыт, то 
             ' перейти на следующую итерацию
-            If My.Computer.FileSystem.FileExists(pathname & "\" & shortname & ".csv") Then
+            If My.Computer.FileSystem.FileExists($"{pathname}\{shortname}.csv") Then
 
-                Dim flag As Integer = MsgBox("файл " & pathname & "\" & shortname &
-                    ".csv уже существует. " & Chr(10) & "Хотите перезаписать его?", vbYesNo)
+                Dim flag As Integer = MsgBox($"файл {FullName} уже существует.{Chr(10)}Хотите перезаписать его?", vbYesNo)
 
-                ' если файл существует и перезаписать = да, проверить, не занят ли он и записать.
-                ' если файл занят - вывести сообщение, что файл занят и перейти на следующую итерацию
+                ' если файл существует, то проверить, не занят ли он и перезаписать.
+                ' если файл занят - вывести сообщение, что файл занят и предложить 
+                ' повторно перезаписать или пропустить
                 If flag = 6 Then
 
                     Try
-                        My.Computer.FileSystem.WriteAllText(pathname & "\" & shortname & ".csv", fOut, False)
+                        My.Computer.FileSystem.WriteAllText($"{pathname}\{shortname}.csv", fOut, False)
                     Catch ex As System.IO.IOException
-                        MsgBox("файл " & pathname & "\" & shortname & ".csv Не может быть сохранен, так как занят другим приложением.")
-                        Continue For
+
+                        ' в этом месте происходит обработка случая, когда файл, который надо перезаписать занят другим процессом.
+                        Dim msgstatus% = MsgBox($"Файл {FullName} Не может быть сохранен, так как занят другим приложением!{Chr(10)}Закройте файл и попробуйте еще раз.", MsgBoxStyle.RetryCancel)
+                        While msgstatus = 4
+                            Try
+                                My.Computer.FileSystem.WriteAllText($"{PathName}\{ShortName}.csv", fOut, False)
+                                msgstatus = 0 ' необходимо сбросить файл ответа, иначе не получится выйти из цикла при успешной перезаписи
+                            Catch
+                                msgstatus% = MsgBox($"Файл {FullName} Не может быть сохранен, так как занят другим приложением!{Chr(10)}Закройте файл и попробуйте еще раз.", MsgBoxStyle.RetryCancel)
+                            End Try
+                        End While
+                        If msgstatus = 2 Then Continue For
                     End Try
                 End If
             Else
-                My.Computer.FileSystem.WriteAllText(pathname & "\" & shortname & ".csv", fOut, False)
-
+                My.Computer.FileSystem.WriteAllText($"{pathname}\{shortname}.csv", fOut, False)
             End If
 
         Next
     End Sub
+
     Private Function utime_to_date(bill_date As Double)
         ' эта функция преобразует, unixtime в стандартный формат времени
 

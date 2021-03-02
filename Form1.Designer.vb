@@ -27,6 +27,7 @@ Partial Class Form1
         Me.Label1 = New System.Windows.Forms.Label()
         Me.Button1 = New System.Windows.Forms.Button()
         Me.Label2 = New System.Windows.Forms.Label()
+        Me.Label3 = New System.Windows.Forms.Label()
         CType(Me.PictureBox1, System.ComponentModel.ISupportInitialize).BeginInit()
         Me.SuspendLayout()
         '
@@ -69,6 +70,16 @@ Partial Class Form1
         Me.Label2.TabIndex = 3
         Me.Label2.Text = "лицензия неактивна"
         '
+        'Label3
+        '
+        Me.Label3.AutoSize = True
+        Me.Label3.ForeColor = System.Drawing.SystemColors.AppWorkspace
+        Me.Label3.Location = New System.Drawing.Point(12, 12)
+        Me.Label3.Name = "Label3"
+        Me.Label3.Size = New System.Drawing.Size(31, 13)
+        Me.Label3.TabIndex = 4
+        Me.Label3.Text = "v 0.3"
+        '
         'Form1
         '
         Me.AllowDrop = True
@@ -77,6 +88,7 @@ Partial Class Form1
         Me.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink
         Me.BackColor = System.Drawing.SystemColors.Window
         Me.ClientSize = New System.Drawing.Size(264, 191)
+        Me.Controls.Add(Me.Label3)
         Me.Controls.Add(Me.Label2)
         Me.Controls.Add(Me.Button1)
         Me.Controls.Add(Me.Label1)
@@ -85,6 +97,7 @@ Partial Class Form1
         Me.MaximizeBox = False
         Me.MinimumSize = New System.Drawing.Size(280, 230)
         Me.Name = "Form1"
+        Me.RightToLeft = System.Windows.Forms.RightToLeft.No
         Me.Text = "Обработка чеков"
         Me.TopMost = True
         CType(Me.PictureBox1, System.ComponentModel.ISupportInitialize).EndInit()
@@ -97,4 +110,5 @@ Partial Class Form1
     Friend WithEvents Label1 As Label
     Friend WithEvents Button1 As Button
     Friend WithEvents Label2 As Label
+    Friend WithEvents Label3 As Label
 End Class
