@@ -1,4 +1,4 @@
-﻿' версия 0.3
+﻿' версия 1.4
 
 Imports Newtonsoft.Json.Linq
 Imports System.Security.Cryptography
@@ -69,71 +69,61 @@ Public Class Form1
                 prefix = ""
             End If
 
-
-            ' обработка исключений. Здесь проверяется корректность входящего json. Если присутствуют 
-            ' метки fiscalDocumentNumber и fiscalDriveNumber, то, это, скорее всего, правильный файл
+            ' try здесь выступает в качестве валидатора json - если файл не является чеком, 
+            ' то исключение будет поймано на списке items, 
+            ' все остальные поля будут равны nothnig
             Try
-                Dim c_block0 = json_obj.SelectToken($"{prefix}kktRegId")
-                Dim c_block1 = json_obj.SelectToken($"{prefix}fiscalDriveNumber")
+                ' название магазина
+                user = json_obj.SelectToken($"{prefix}user")
 
-                If IsNothing(c_block0) Then c_block0 = ""
-                If IsNothing(c_block1) Then c_block1 = ""
+                'дата создания чека в unixtime
+                bill_date = json_obj.SelectToken($"{prefix}dateTime")
 
-                If c_block0.ToString.Length = 0 Or c_block1.ToString.Length = 0 Then
-                    Throw New Exception("JSONControlBlocksFail")
-                End If
+                ' здесь конвертируется unixtime в datetime. 
+                ' версия для android получает значение в unixtime, для IOS в datetime
+                ' поэтому необходимо отловить правильную версию
+                Try
+                    dtime = CDate(utime_to_date(bill_date)).ToString("dd.MM.yyyy HH:mm:ss")
+                Catch
+                    dtime = CDate(bill_date).ToString("dd.MM.yyyy HH:mm:ss")
+                End Try
+
+                'итоговая сумма
+                total_sum = CDbl(json_obj.SelectToken($"{prefix}totalSum")) / 100
+
+                ' основная стока, которая собирает всю информацию
+                fOut = ""
+
+                ' запись в основную строку
+                fOut = $"{user};Дата:;{dtime};{Chr(10)};{Chr(10)}"
+                fOut = $"{fOut}Продукт;Количество;Цена за шт.;Цена;{Chr(10)}"
+
+                ' массив позиций покупок в чеке
+                items = json_obj.SelectToken($"{prefix}items")
+
+                ' обработка всех позиций
+                For Each j In items
+
+                    quantity = j.SelectToken("quantity")          ' количество шт. позиции
+                    name = j.SelectToken("name")                  ' название позиции
+                    price = CDbl(j.SelectToken("price")) / 100    ' стоимость за штуку
+                    sum_price = CDbl(j.SelectToken("sum")) / 100  ' итоговая стоимость
+
+                    ' запись в основную строку
+                    fOut = $"{fOut}{name};{quantity};{price};{sum_price};{Chr(10)}"
+
+                    ' ирекурсивная запись всех строк
+                    total_q += quantity
+                Next
+
+                ' запись в основную строку
+                fOut = $"{fOut}{Chr(10)}ИТОГО:;{total_q};;{total_sum}"
+                'fOut = fOut & Chr(10) & "ИТОГО:;" & total_q & ";;" & total_sum
+
             Catch ex As Exception
                 MsgBox($"Файл {FullName} не может быть обработан, так как не является кассовым чеком")
                 Continue For
             End Try
-
-
-            ' название магазина
-            user = json_obj.SelectToken($"{prefix}user")
-
-            'дата создания чека в unixtime
-            bill_date = json_obj.SelectToken($"{prefix}dateTime")
-
-            ' здесь конвертируется unixtime в datetime. 
-            ' версия для android получает значение в unixtime, для IOS в datetime
-            ' поэтому необходимо отловить правильную версию
-            Try
-                dtime = CDate(utime_to_date(bill_date)).ToString("dd.MM.yyyy HH:mm:ss")
-            Catch
-                dtime = CDate(bill_date).ToString("dd.MM.yyyy HH:mm:ss")
-            End Try
-
-            'итоговая сумма
-            total_sum = CDbl(json_obj.SelectToken($"{prefix}totalSum")) / 100
-
-            ' основная стока, которая собирает всю информацию
-            fOut = ""
-
-            ' запись в основную строку
-            fOut = $"{user};Дата:;{dtime};{Chr(10)};{Chr(10)}"
-            fOut = $"{fOut}Продукт;Количество;Цена за шт.;Цена;{Chr(10)}"
-
-            ' массив позиций покупок в чеке
-            items = json_obj.SelectToken($"{prefix}items")
-
-            ' обработка всех позиций
-            For Each j In items
-
-                quantity = j.SelectToken("quantity")          ' количество шт. позиции
-                name = j.SelectToken("name")                  ' название позиции
-                price = CDbl(j.SelectToken("price")) / 100    ' стоимость за штуку
-                sum_price = CDbl(j.SelectToken("sum")) / 100  ' итоговая стоимость
-
-                ' запись в основную строку
-                fOut = $"{fOut}{name};{quantity};{price};{sum_price};{Chr(10)}"
-
-                ' ирекурсивная запись всех строк
-                total_q += quantity
-            Next
-
-            ' запись в основную строку
-            fOut = $"{fOut}{Chr(10)}ИТОГО:;{total_q};;{total_sum}"
-            'fOut = fOut & Chr(10) & "ИТОГО:;" & total_q & ";;" & total_sum
 
             ' обработка исключений. Если csv файл существует и открыт, то 
             ' перейти на следующую итерацию
