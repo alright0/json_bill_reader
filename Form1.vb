@@ -73,7 +73,7 @@ Public Class Form1
             ' обработка исключений. Здесь проверяется корректность входящего json. Если присутствуют 
             ' метки fiscalDocumentNumber и fiscalDriveNumber, то, это, скорее всего, правильный файл
             Try
-                Dim c_block0 = json_obj.SelectToken($"{prefix}retailPlaceAddress")
+                Dim c_block0 = json_obj.SelectToken($"{prefix}kktRegId")
                 Dim c_block1 = json_obj.SelectToken($"{prefix}fiscalDriveNumber")
 
                 If IsNothing(c_block0) Then c_block0 = ""
