@@ -15,6 +15,7 @@ Public Class Form1
         ' то необходимо отборсить его счетчик массива нужно будет пересчитать
         Dim inc% = 0            ' инкремент валидных файлов
         Dim file() As String    ' массив валидных файлов
+
         For Each fl In raw_file
 
             If FileIO.FileSystem.GetFileInfo(fl).Extension <> ".json" Then
@@ -118,7 +119,6 @@ Public Class Form1
 
                 ' запись в основную строку
                 fOut = $"{fOut}{Chr(10)}ИТОГО:;{total_q};;{total_sum}"
-                'fOut = fOut & Chr(10) & "ИТОГО:;" & total_q & ";;" & total_sum
 
             Catch ex As Exception
                 MsgBox($"Файл {FullName} не может быть обработан, так как не является кассовым чеком")
@@ -179,17 +179,20 @@ Public Class Form1
     End Sub
     Shared Function lic_compare() As Boolean
         ' функция для проверки файла лицензии 
-        ' и фактического хэша FeatureSet
+        ' и фактического хэша bios & central processor
 
         ' файл лиицензии
-        Dim lic As String = My.Computer.FileSystem.ReadAllText(Application.StartupPath & "\license.lic")
+        Dim lic As String = My.Computer.FileSystem.ReadAllText(
+            Application.StartupPath & "\license.lic")
 
 
         Dim FSet = My.Computer.Registry.GetValue(
-            "HKEY_LOCAL_MACHINE\HARDWARE\DESCRIPTION\System\BIOS", "BaseBoardProduct", Nothing)
+            "HKEY_LOCAL_MACHINE\HARDWARE\DESCRIPTION\System\BIOS",
+            "BaseBoardProduct", Nothing)
 
         Dim Sset = My.Computer.Registry.GetValue(
-            "HKEY_LOCAL_MACHINE\HARDWARE\DESCRIPTION\System\CentralProcessor\0", "ProcessorNameString", Nothing)
+            "HKEY_LOCAL_MACHINE\HARDWARE\DESCRIPTION\System\CentralProcessor\0",
+            "ProcessorNameString", Nothing)
 
         Dim Dset = FSet & " " & Sset
 
@@ -211,19 +214,20 @@ Public Class Form1
             If lic_compare() Then
 
                 AllowDrop = True
-                Label1.Text = "перетащите файлы " & Chr(10) & "в это окно"
+                Label1.Text = $"перетащите файлы в это окно"
                 Label2.Text = "Лицензия активна"
                 Label2.Visible = False
                 Button1.Visible = False
             Else
+
                 AllowDrop = False
-                Label1.Text = "перетаскивание " & Chr(10) & "недоступно"
-                MsgBox("Лицензия не действительна")
+                Label1.Text = $"перетаскивание недоступно"
+                MsgBox("Лицензия не действительна!", Title:="Внимание!")
             End If
         Else
 
             AllowDrop = False
-            Label1.Text = "перетаскивание " & Chr(10) & "недоступно"
+            Label1.Text = $"перетаскивание недоступно"
             Label2.Text = "Лицензия неактивна"
 
         End If
