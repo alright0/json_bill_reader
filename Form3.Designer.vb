@@ -34,39 +34,35 @@ Partial Class Form3
         'Label5
         '
         Me.Label5.AutoSize = True
-        Me.Label5.Location = New System.Drawing.Point(24, 169)
-        Me.Label5.Margin = New System.Windows.Forms.Padding(6, 0, 6, 0)
+        Me.Label5.Location = New System.Drawing.Point(12, 88)
         Me.Label5.Name = "Label5"
-        Me.Label5.Size = New System.Drawing.Size(141, 25)
+        Me.Label5.Size = New System.Drawing.Size(73, 13)
         Me.Label5.TabIndex = 15
         Me.Label5.Text = "Реквест-код:"
         '
         'TextBox5
         '
-        Me.TextBox5.Location = New System.Drawing.Point(30, 200)
-        Me.TextBox5.Margin = New System.Windows.Forms.Padding(6, 6, 6, 6)
+        Me.TextBox5.Location = New System.Drawing.Point(15, 104)
         Me.TextBox5.Name = "TextBox5"
         Me.TextBox5.ReadOnly = True
-        Me.TextBox5.Size = New System.Drawing.Size(420, 31)
+        Me.TextBox5.Size = New System.Drawing.Size(212, 20)
         Me.TextBox5.TabIndex = 14
         '
         'PictureBox1
         '
         Me.PictureBox1.Image = CType(resources.GetObject("PictureBox1.Image"), System.Drawing.Image)
-        Me.PictureBox1.Location = New System.Drawing.Point(150, 23)
-        Me.PictureBox1.Margin = New System.Windows.Forms.Padding(6, 6, 6, 6)
+        Me.PictureBox1.Location = New System.Drawing.Point(75, 12)
         Me.PictureBox1.Name = "PictureBox1"
-        Me.PictureBox1.Size = New System.Drawing.Size(188, 133)
+        Me.PictureBox1.Size = New System.Drawing.Size(94, 69)
         Me.PictureBox1.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom
         Me.PictureBox1.TabIndex = 16
         Me.PictureBox1.TabStop = False
         '
         'Button2
         '
-        Me.Button2.Location = New System.Drawing.Point(30, 250)
-        Me.Button2.Margin = New System.Windows.Forms.Padding(6, 6, 6, 6)
+        Me.Button2.Location = New System.Drawing.Point(15, 130)
         Me.Button2.Name = "Button2"
-        Me.Button2.Size = New System.Drawing.Size(424, 44)
+        Me.Button2.Size = New System.Drawing.Size(212, 23)
         Me.Button2.TabIndex = 17
         Me.Button2.Text = "У меня есть файл лицензии"
         Me.Button2.UseVisualStyleBackColor = True
@@ -77,19 +73,18 @@ Partial Class Form3
         '
         'Form3
         '
-        Me.AutoScaleDimensions = New System.Drawing.SizeF(12.0!, 25.0!)
+        Me.AutoScaleDimensions = New System.Drawing.SizeF(6.0!, 13.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
         Me.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink
         Me.BackColor = System.Drawing.SystemColors.Window
-        Me.ClientSize = New System.Drawing.Size(478, 313)
+        Me.ClientSize = New System.Drawing.Size(244, 169)
         Me.Controls.Add(Me.Button2)
         Me.Controls.Add(Me.PictureBox1)
         Me.Controls.Add(Me.Label5)
         Me.Controls.Add(Me.TextBox5)
         Me.Icon = CType(resources.GetObject("$this.Icon"), System.Drawing.Icon)
-        Me.Margin = New System.Windows.Forms.Padding(6, 6, 6, 6)
         Me.MaximizeBox = False
-        Me.MinimumSize = New System.Drawing.Size(504, 384)
+        Me.MinimumSize = New System.Drawing.Size(260, 208)
         Me.Name = "Form3"
         Me.Text = "Активация"
         Me.TopMost = True
