@@ -46,7 +46,7 @@ Public Class Form1
 
             Dim raw_json As New StreamReader(file(I))   ' сырой файл
             Dim contents$ = raw_json.ReadToEnd()        ' прочитанный файл
-            Dim total_q& = 0                            ' количество закупленных шт. в чеке
+            Dim total_q# = 0                            ' количество закупленных шт. в чеке
 
             Dim name$, user$, prefix$, fOut$                'string
             Dim price#, sum_price#, total_sum#, quantity#   'double
