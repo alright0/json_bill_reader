@@ -48,10 +48,9 @@ Public Class Form1
             Dim contents$ = raw_json.ReadToEnd()        ' прочитанный файл
             Dim total_q& = 0                            ' количество закупленных шт. в чеке
 
-            Dim quantity&                         'long int
-            Dim name$, user$, prefix$, fOut$      'string
-            Dim price#, sum_price#, total_sum#    'double
-            Dim items, dtime, bill_date, json_obj 'variant
+            Dim name$, user$, prefix$, fOut$                'string
+            Dim price#, sum_price#, total_sum#, quantity#   'double
+            Dim items, dtime, bill_date, json_obj           'variant
 
 
             ' проверка, является ли файл json-файлом
