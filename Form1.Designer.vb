@@ -91,7 +91,7 @@ Partial Class Form1
         Me.MinimumSize = New System.Drawing.Size(275, 227)
         Me.Name = "Form1"
         Me.RightToLeft = System.Windows.Forms.RightToLeft.No
-        Me.Text = "Обработка чеков v1.4"
+        Me.Text = "Обработка чеков v1.5"
         Me.TopMost = True
         CType(Me.PictureBox1, System.ComponentModel.ISupportInitialize).EndInit()
         Me.ResumeLayout(False)

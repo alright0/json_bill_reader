@@ -48,48 +48,60 @@ Public Class Form1
             Dim contents$ = raw_json.ReadToEnd()        ' прочитанный файл
             Dim total_q# = 0                            ' количество закупленных шт. в чеке
 
-            Dim name$, user$, prefix$, fOut$                'string
+            Dim name$, user$, fOut$                         'string
             Dim price#, sum_price#, total_sum#, quantity#   'double
             Dim items, dtime, bill_date, json_obj           'variant
 
+            raw_json.Close()
 
             ' проверка, является ли файл json-файлом
             Try
-                json_obj = JObject.Parse(contents)
-            Catch ex As Exception
+                json_obj = JToken.Parse(contents)
+            Catch
                 MsgBox($"Файл {FullName} не может быть обработан, так как не является JSON-структурированным файлом")
                 Continue For
             End Try
 
 
-            ' переключение между схемами JSON для IOS и Android
-            If Not IsNothing(json_obj.SelectToken("['ticket.document.receipt']")) Then
-                prefix = "['ticket.document.receipt']."
-            Else
-                prefix = ""
-            End If
-
             ' try здесь выступает в качестве валидатора json - если файл не является чеком, 
             ' то исключение будет поймано на списке items, 
-            ' все остальные поля будут равны nothnig
+            ' все остальные поля будут равны 
             Try
                 ' название магазина
-                user = json_obj.SelectToken($"{prefix}user")
+                user = json_obj.SelectToken("$..user")
+                Try
+                    'дата создания чека в unixtime
+                    bill_date = json_obj.SelectToken("$..dateTime")
 
-                'дата создания чека в unixtime
-                bill_date = json_obj.SelectToken($"{prefix}dateTime")
+                    If IsNothing(bill_date) Then
+                        bill_date = json_obj.SelectTokens("$..date")
+                    End If
+
+                    For Each dt In bill_date
+                        bill_date = dt
+                        Exit For
+                    Next
+                Catch
+
+                End Try
 
                 ' здесь конвертируется unixtime в datetime. 
                 ' версия для android получает значение в unixtime, для IOS в datetime
                 ' поэтому необходимо отловить правильную версию
                 Try
-                    dtime = CDate(utime_to_date(bill_date)).ToString("dd.MM.yyyy HH:mm:ss")
+                    Try
+                        dtime = CDate(utime_to_date(bill_date)).ToString("dd.MM.yyyy HH:mm:ss")
+                    Catch
+                        dtime = CDate(bill_date).ToString("dd.MM.yyyy HH:mm:ss")
+                    End Try
                 Catch
-                    dtime = CDate(bill_date).ToString("dd.MM.yyyy HH:mm:ss")
-                End Try
 
+
+                    dtime = "Не удалось получить дату покупки"
+
+                End Try
                 'итоговая сумма
-                total_sum = CDbl(json_obj.SelectToken($"{prefix}totalSum")) / 100
+                total_sum = CDbl(json_obj.SelectToken("$..totalSum")) / 100
 
                 ' основная стока, которая собирает всю информацию
                 fOut = ""
@@ -98,10 +110,9 @@ Public Class Form1
                 fOut = $"{user};Дата:;{dtime};{Chr(10)};{Chr(10)}"
                 fOut = $"{fOut}Продукт;Количество;Цена за шт.;Цена;{Chr(10)}"
 
-                ' массив позиций покупок в чеке
-                items = json_obj.SelectToken($"{prefix}items")
-
                 ' обработка всех позиций
+                items = json_obj.SelectToken("$..items")
+
                 For Each j In items
 
                     quantity = j.SelectToken("quantity")          ' количество шт. позиции
